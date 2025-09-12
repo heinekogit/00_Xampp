@@ -1,0 +1,101 @@
+
+
+Thumbs.db や .DS_Store、desktop.ini、それから 「._」で始まるApple系の不可視ファイルを Imagick が画像として読みに行ってコケてます（no decode delegate for ... 'DB' は Thumbs.db を指してる可能性大）。
+
+サクッと掃除→再発防止の最短セット置きます。
+1) まずは中身を見る（ドライラン）
+
+PowerShell を「対象フォルダの一つ上」で開いて実行：
+
+Get-ChildItem -Recurse -Force -File -Include Thumbs.db, .DS_Store, desktop.ini, '._*' | Select-Object FullName
+
+2) 削除（問題なければ）
+
+Get-ChildItem -Recurse -Force -File -Include Thumbs.db, .DS_Store, desktop.ini, '._*' |
+  Remove-Item -Force -ErrorAction SilentlyContinue
+
+特定のルート（例：C:\xampp\htdocs）を丸ごとやるなら：
+
+Get-ChildItem 'C:\xampp\htdocs' -Recurse -Force -File -Include Thumbs.db, .DS_Store, desktop.ini, '._*' |
+  Remove-Item -Force -ErrorAction SilentlyContinue
+
+※ cmd.exe派なら（隠し属性も対象）：
+
+del /s /q /a:h Thumbs.db
+del /s /q /a:h desktop.ini
+del /s /q .DS_Store
+del /s /q ._*
+
+3) 予防（Imagick 側で“そもそも拾わない”）
+
+PHPのループで拡張子フィルタ＋不可視ファイル除外を入れておくと事故りません。
+
+$allowed = ['jpg','jpeg','png','gif','webp'];
+$basename = basename($path);
+
+if (
+    preg_match('/^(Thumbs\.db|desktop\.ini|\.DS_Store|\.?_.*)$/i', $basename) ||
+    !in_array(strtolower(pathinfo($path, PATHINFO_EXTENSION)), $allowed, true)
+) {
+    // スキップ
+    continue;
+}
+
+try {
+    $im = new Imagick($path);
+    // …処理…
+} catch (ImagickException $e) {
+    // 壊れファイルや未知形式もスキップ
+    continue;
+}
+
+補足（再発しやすい人向け）
+
+    サムネキャッシュ抑止（ネットワーク共有で特に有効）
+    「ローカルグループポリシー → 管理用テンプレート → Windowsコンポーネント → ファイルエクスプローラー →
+    “ネットワークフォルダーに隠しの thumbs.db を作成しない” を 有効」
+    ※ローカルには作られることが多いので、定期掃除スクリプトをタスク化してもOK。
+
+これで落ち着くはず。もしまだ同じ例外が出たら、エラー行の $path をログ出力して貼ってくれれば、ピンポイントで弾く条件を
+
+
+
+
+
+
+09/01
+PS C:\xampp\htdocs\working\01_check_pre> Get-ChildItem -Path "C:\xampp\htdocs\working\01_check_pre" -Recurse -Force -Include Thumbs.db | Remove-Item -Force
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
