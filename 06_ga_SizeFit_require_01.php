@@ -156,9 +156,9 @@ foreach ($file_list as $path) {     // 画像ファイルのリストをルー�
     // 画像のフォーマットをJPEGに設定
     $im->setImageFormat("jpeg");
 
-    // 出力ファイル名を作成
-    $seikei_num = sprintf('%03d', $image_file_num);  // 出力画像名の0埋め
-    $output_combined = $output_wa_dir . "/" . $wa_folder_list[$wa_folder_num] . "_" . $seikei_num . ".jpg";
+    // 出力ファイル名を作成（元ファイル名をそのまま使用）
+    $basename = basename($path); // 元ファイル名（拡張子含む）
+    $output_combined = $output_wa_dir . "/" . $basename;
 
     // ファイルを書き込み
     $f = fopen($output_combined, "wb");
